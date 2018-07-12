@@ -1,0 +1,20 @@
+{
+    "name": "racztiborzoltan/stex",
+    "description": "Simple Template Xslt",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Rácz Tibor Zoltán",
+            "email": "racztiborzoltan@gmail.com"
+        }
+    ],
+    "autoload": {
+    	"psr-4": {
+    		"Stex\\": "src"
+    	}
+    },
+    "require": {
+    	"php": "^7.1"
+    }
+}
