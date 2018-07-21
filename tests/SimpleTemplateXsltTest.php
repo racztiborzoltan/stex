@@ -14,7 +14,7 @@ final class SimpleTemplateXsltTest extends TestCase
 
     private $_raw_xsl_document = '
         <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
-        	<xsl:output method="xml" encoding="utf-8" indent="yes" />
+        	<xsl:output method="xml" encoding="utf-8" indent="yes" omit-xml-declaration="yes" />
             <xsl:strip-space elements="root,message"/>
         	<xsl:template match="/root/message">
                 <xsl:element name="test">
@@ -26,9 +26,8 @@ final class SimpleTemplateXsltTest extends TestCase
 
     private $_result_raw_string = '<test>test message</test>';
 
-    public function testSimpleTemplateXslt()
+    protected function _factorySimpleTemplateXslt(): SimpleTemplateXslt
     {
-
         $stex = new SimpleTemplateXslt();
 
         $xsl = new \DOMDocument();
@@ -39,25 +38,11 @@ final class SimpleTemplateXsltTest extends TestCase
         $xml->loadXML('<root><message>'.$this->_test_message.'</message></root>');
         $stex->setXmlDocument($xml);
 
-        /**
-         * @var \DOMDocument $dom_document
-         */
-        $dom_document = $stex->transformToDomDocument();
-        $this->_assertTestMessage($dom_document, '/test', $this->_test_message);
-        unset($dom_document);
-
-        $dom_document = $stex->renderToDomDocument();
-        $this->_assertTestMessage($dom_document, '/test', $this->_test_message);
-        unset($dom_document);
-
-        $this->assertEquals($this->_result_raw_string, trim($stex->render()));
-        $this->assertEquals($this->_result_raw_string, trim($stex->renderToString()));
-        $this->assertEquals($this->_result_raw_string, trim($stex->transformToString()));
+        return $stex;
     }
 
-    public function testSimpleTemplateXsltWithVariableList()
+    protected function _factorySimpleTemplateXsltWithVariableList(): SimpleTemplateXslt
     {
-
         $stex = new SimpleTemplateXslt();
 
         $xsl = new \DOMDocument();
@@ -69,12 +54,37 @@ final class SimpleTemplateXsltTest extends TestCase
         $xml_document = $variables->toDomDocument('root');
         $stex->setXmlDocument($xml_document);
 
-        /**
-         * @var \DOMDocument $dom_document
-         */
-        $dom_document = $stex->transformToDomDocument();
+        return $stex;
+    }
 
-        $this->_assertTestMessage($dom_document, '/test', $this->_test_message);
+    public function test_transformToDomDocument()
+    {
+        $this->_assertTestMessage($this->_factorySimpleTemplateXslt()->transformToDomDocument(), '/test', $this->_test_message);
+        $this->_assertTestMessage($this->_factorySimpleTemplateXsltWithVariableList()->transformToDomDocument(), '/test', $this->_test_message);
+    }
+
+    public function test_renderToDomDocument()
+    {
+        $this->_assertTestMessage($this->_factorySimpleTemplateXslt()->renderToDomDocument(), '/test', $this->_test_message);
+        $this->_assertTestMessage($this->_factorySimpleTemplateXsltWithVariableList()->renderToDomDocument(), '/test', $this->_test_message);
+    }
+
+    public function test_render()
+    {
+        $this->assertEquals($this->_result_raw_string, trim($this->_factorySimpleTemplateXslt()->render()));
+        $this->assertEquals($this->_result_raw_string, trim($this->_factorySimpleTemplateXsltWithVariableList()->render()));
+    }
+
+    public function test_renderToString()
+    {
+        $this->assertEquals($this->_result_raw_string, trim($this->_factorySimpleTemplateXslt()->renderToString()));
+        $this->assertEquals($this->_result_raw_string, trim($this->_factorySimpleTemplateXsltWithVariableList()->renderToString()));
+    }
+
+    public function test_transformToString()
+    {
+        $this->assertEquals($this->_result_raw_string, trim($this->_factorySimpleTemplateXslt()->transformToString()));
+        $this->assertEquals($this->_result_raw_string, trim($this->_factorySimpleTemplateXsltWithVariableList()->transformToString()));
     }
 
     private function _assertTestMessage(\DOMDocument $dom_document, string $xpath_expression, $expected_value)
