@@ -112,8 +112,8 @@ class SimpleTemplateXslt
      */
     public function transformToString(): string
     {
-        $dom_document = $this->transformToDomDocument();
-        return $dom_document->saveHTML($dom_document);
+        $this->getXsltProcessor()->importStylesheet($this->getXslDocument());
+        return $this->getXsltProcessor()->transformToXml($this->getXmlDocument());
     }
 
     /**
