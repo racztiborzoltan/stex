@@ -15,13 +15,16 @@ final class SimpleTemplateXsltTest extends TestCase
     private $_raw_xsl_document = '
         <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
         	<xsl:output method="xml" encoding="utf-8" indent="yes" />
+            <xsl:strip-space elements="root,message"/>
         	<xsl:template match="/root/message">
-                <test>
+                <xsl:element name="test">
                     <xsl:value-of select="." />
-                </test>
+                </xsl:element>
         	</xsl:template>
         </xsl:stylesheet>
     ';
+
+    private $_result_raw_string = '<test>test message</test>';
 
     public function testSimpleTemplateXslt()
     {
@@ -33,24 +36,23 @@ final class SimpleTemplateXsltTest extends TestCase
         $stex->setXslDocument($xsl);
 
         $xml = new \DOMDocument();
-        $xml->loadXML('
-            <root>
-            	<message>'.$this->_test_message.'</message>
-            </root>
-        ');
+        $xml->loadXML('<root><message>'.$this->_test_message.'</message></root>');
         $stex->setXmlDocument($xml);
 
         /**
          * @var \DOMDocument $dom_document
          */
         $dom_document = $stex->transformToDomDocument();
-
         $this->_assertTestMessage($dom_document, '/test', $this->_test_message);
-
         unset($dom_document);
 
         $dom_document = $stex->renderToDomDocument();
         $this->_assertTestMessage($dom_document, '/test', $this->_test_message);
+        unset($dom_document);
+
+        $this->assertEquals($this->_result_raw_string, trim($stex->render()));
+        $this->assertEquals($this->_result_raw_string, trim($stex->renderToString()));
+        $this->assertEquals($this->_result_raw_string, trim($stex->transformToString()));
     }
 
     public function testSimpleTemplateXsltWithVariableList()

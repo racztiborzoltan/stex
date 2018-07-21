@@ -112,7 +112,7 @@ class SimpleTemplateXslt
      */
     public function transformToString(): string
     {
-        $dom_document = $this->renderDomDocument();
+        $dom_document = $this->transformToDomDocument();
         return $dom_document->saveHTML($dom_document);
     }
 
@@ -123,7 +123,7 @@ class SimpleTemplateXslt
      */
     public function render(): string
     {
-        return $this->transformToString();
+        return $this->renderToString();
     }
 
     /**
