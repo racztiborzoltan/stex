@@ -141,7 +141,7 @@ class SimpleTemplateXslt
      *
      * @return string
      */
-    public function renderToDomDocument(): string
+    public function renderToDomDocument(): \DOMDocument
     {
         return $this->transformToDomDocument();
     }

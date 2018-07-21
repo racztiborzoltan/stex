@@ -46,6 +46,11 @@ final class SimpleTemplateXsltTest extends TestCase
         $dom_document = $stex->transformToDomDocument();
 
         $this->_assertTestMessage($dom_document, '/test', $this->_test_message);
+
+        unset($dom_document);
+
+        $dom_document = $stex->renderToDomDocument();
+        $this->_assertTestMessage($dom_document, '/test', $this->_test_message);
     }
 
     public function testSimpleTemplateXsltWithVariableList()
