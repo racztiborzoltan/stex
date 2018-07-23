@@ -164,13 +164,11 @@ class VariableList
             $parent_element->appendChild($node);
 
             if (is_scalar($node_value)) {
-
                 if (is_bool($node_value)) {
                     $node_value = $node_value ? 'true' : 'false';
                 }
                 // create CDATA subnode if node value is an scalar:
                 $node->appendChild($parent_element->ownerDocument->createCDATASection($node_value));
-
             } elseif (is_array($node_value)) {
 
                 // recursive call if node value is array
@@ -179,7 +177,6 @@ class VariableList
                 if ($node->textContent == '' && !empty($node_value)) {
                     $node->parentNode->removeChild($node);
                 }
-
             }
             if (is_numeric($node_name)) {
                 $parent_element->parentNode->appendChild($node);
