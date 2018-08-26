@@ -2,6 +2,7 @@
     "name": "racztiborzoltan/stex",
     "description": "Simple Template Xslt",
     "type": "library",
+    "keywords": ["xslt", "xslt-transform", "xslt-processor", "psr-11", "container-support"],
     "license": "MIT",
     "authors": [
         {

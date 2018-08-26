@@ -1,10 +1,10 @@
 <?php
-use Stex\SimpleTemplateXslt;
+use Stex\StexXsltProcessor;
 use Stex\VariableList;
 
 require_once '../vendor/autoload.php';
 
-$stex = new SimpleTemplateXslt();
+$stex = new StexXsltProcessor();
 
 libxml_use_internal_errors(true);
 
@@ -26,9 +26,7 @@ $variables->set('cd', [
     ],
 ]);
 
-$stex->setXmlDocument($variables->toDomDocument('collection'));
-
-$dom_document = $stex->transformToDomDocument();
+$dom_document = $stex->transformToDoc($variables->toDomDocument('collection'));
 
 $dom_document->formatOutput = true;
 $dom_document->preserveWhiteSpace = false;
