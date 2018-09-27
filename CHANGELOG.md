@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.1.0
+
+- new syntax for using CSS selectors
+	- example: ``<... select="@css[__CSS_SELECTOR__]" >``
+
 ## 2.0.0
 - rename \Stes\SimpleTemplateXslt -> \Stex\StexXsltProcessor
 

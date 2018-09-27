@@ -57,11 +57,12 @@ class StexXsltProcessor extends \XSLTProcessor
      * Set XSL document object for XSLT transformation
      *
      * @param \DOMDocument $xsl_document
-     * @return \Stex\SimpleTemplateXslt
+     * @return self
      */
     public function setXslDocument(\DOMDocument $xsl_document)
     {
         $this->_xsl_document = $xsl_document;
+        $this->importStylesheet($xsl_document);
         return $this;
     }
 
@@ -82,7 +83,7 @@ class StexXsltProcessor extends \XSLTProcessor
      * Set XML document object for XSLT transformation
      *
      * @param \DOMDocument $xml_document
-     * @return \Stex\SimpleTemplateXslt
+     * @return self
      */
     public function setXmlDocument(\DOMDocument $xml_document)
     {
@@ -159,7 +160,16 @@ class StexXsltProcessor extends \XSLTProcessor
             $xsl_document = $stylesheet;
         }
         if (isset($xsl_document)) {
-            $this->setXslDocument($xsl_document);
+
+            $this->_prepareStexCssSelectAttribute($xsl_document);
+
+            try {
+                if ($this->getXslDocument() !== $xsl_document) {
+                    throw new \LogicException();
+                }
+            } catch (\LogicException $e) {
+                $this->setXslDocument($xsl_document);
+            }
             $this->_imported_stylesheet = $xsl_document;
         }
         return parent::importStylesheet($stylesheet);
@@ -179,9 +189,9 @@ class StexXsltProcessor extends \XSLTProcessor
                 $this->setXmlDocument($doc->ownerDocument);
             }
         }
-        $this->_beforeTransform();
+        $this->_startBeforeTransform();
         $result = parent::transformToDoc($doc);
-        $this->_afterTransform();
+        $this->_startAfterTransform();
         return $result;
     }
 
@@ -195,9 +205,9 @@ class StexXsltProcessor extends \XSLTProcessor
         if ($doc instanceof \DOMDocument) {
             $this->setXmlDocument($doc);
         }
-        $this->_beforeTransform();
+        $this->_startBeforeTransform();
         $result = parent::transformToUri($doc, $uri);
-        $this->_afterTransform();
+        $this->_startAfterTransform();
         return $result;
     }
 
@@ -218,24 +228,33 @@ class StexXsltProcessor extends \XSLTProcessor
             $this->setxmlDocument($xml_document);
         }
 
-        $this->_beforeTransform();
+        $this->_startBeforeTransform();
         $result = parent::transformToXml($doc);
-        $this->_afterTransform();
+        $this->_startAfterTransform();
         return $result;
     }
 
     /**
      * Operations before xslt transformation
      */
-    protected function _beforeTransform()
+    public function beforeTransform()
     {
-        try {
-            if (!empty($this->_imported_stylesheet) || $this->_imported_stylesheet !== $this->getXslDocument()) {
-                $this->importStylesheet($this->getXslDocument());
-            }
-        } catch (\LogicException $e) {
-        }
 
+    }
+
+    /**
+     * Operations after xslt transformation
+     */
+    public function afterTransform()
+    {
+
+    }
+
+    /**
+     * Start operations before xslt transformation
+     */
+    protected function _startBeforeTransform()
+    {
         $alias_class_name = static::getStaticContainerCallsClassName() . '_' . str_replace('.', '', uniqid(null, true));
         // set StaticContainerClass class alias:
         class_alias(static::getStaticContainerCallsClassName(), $alias_class_name);
@@ -251,15 +270,20 @@ class StexXsltProcessor extends \XSLTProcessor
         // prepare the original xsl document:
         $xsl_document = $this->getXslDocument();
         $xsl_document = $this->_prepareXslDocument($xsl_document, $alias_class_name);
+
         parent::importStylesheet($xsl_document);
+
+        $this->beforeTransform();
     }
 
     /**
-     * Operations after xslt transformation
+     * Start operations after xslt transformation
      */
-    protected function _afterTransform()
+    protected function _startAfterTransform()
     {
         // remove class alias is not possible :(
+
+        $this->afterTransform();
     }
 
     /**
@@ -269,13 +293,22 @@ class StexXsltProcessor extends \XSLTProcessor
      */
     protected function _prepareXslDocument(\DOMDocument $xsl_document, string $static_container_calls_alias): \DOMDocument
     {
+        $this->_repairRegisterPHPFunctions($xsl_document);
+        $this->_prepareContainerCalls($xsl_document, $static_container_calls_alias);
+        return $xsl_document;
+    }
 
+    protected function _repairRegisterPHPFunctions(\DOMDocument $xsl_document)
+    {
         $xpath = new \DOMXPath($xsl_document);
         $php_function_calls = $xpath->query('//@select[starts-with(normalize-space(.), "php:function")]');
         if ($php_function_calls->length > 0) {
             $this->registerPHPFunctions();
         }
+    }
 
+    protected function _prepareContainerCalls(\DOMDocument $xsl_document, string $static_container_calls_alias)
+    {
         $xpath = new \DOMXPath($xsl_document);
         $container_calls = $xpath->query('//@select[starts-with(normalize-space(.), "this:container(")]');
         if ($container_calls->length === 0) {
@@ -306,8 +339,82 @@ class StexXsltProcessor extends \XSLTProcessor
             $this->_fixExcludeResultPrefixesAttribute($xsl_document);
 
         }
+    }
 
-        return $xsl_document;
+    private const CSS_SELECTOR_EXPRESSION_BEGIN = '@css[';
+    private const CSS_SELECTOR_EXPRESSION_END = ']';
+
+    /**
+     * Convert CSS expression ("@css[__CSS_SELECTOR__]") to Xpath expression
+     *
+     * Returns null if an error has occurred. (invalid css expression or invalid css selector)
+     *
+     * @param string $css_expression
+     * @return string|NULL
+     */
+    protected function _convertCssExpressionToXpath($css_expression): ?string
+    {
+        if (substr($css_expression, 0, strlen(static::CSS_SELECTOR_EXPRESSION_BEGIN)) !== static::CSS_SELECTOR_EXPRESSION_BEGIN
+            ||
+            substr($css_expression, -1 * strlen(static::CSS_SELECTOR_EXPRESSION_END)) !== static::CSS_SELECTOR_EXPRESSION_END
+        ) {
+            return null;
+        }
+        $css_selector = substr($css_expression, strlen(static::CSS_SELECTOR_EXPRESSION_BEGIN), -1 * strlen(static::CSS_SELECTOR_EXPRESSION_END));
+        $css_selector = trim($css_selector);
+
+        if ($css_selector[0] === '\'' && $css_selector[strlen($css_selector)-1] === '\'') {
+            $css_selector = trim($css_selector, '\'');
+        }
+        if ($css_selector[0] === '"' && $css_selector[strlen($css_selector)-1] === '"') {
+            $css_selector = trim($css_selector, '"');
+        }
+        try {
+            return (new \Symfony\Component\CssSelector\CssSelectorConverter())->toXPath($css_selector);
+        } catch (\Symfony\Component\CssSelector\Exception\SyntaxErrorException $e) {
+            return null;
+        }
+    }
+
+    protected function _prepareStexCssSelectAttribute(\DOMDocument $xsl_document)
+    {
+        $xpath = new \DOMXPath($xsl_document);
+        $nodes = $xpath->query('//@select');
+        foreach ($nodes as $select_attribute) {
+            /**
+             * @var \DOMAttr $select_attribute
+             */
+            while (($css_expression_start_pos = strpos($select_attribute->value, static::CSS_SELECTOR_EXPRESSION_BEGIN)) !== false) {
+                $select_value = $select_attribute->value;
+                if ($css_expression_start_pos === false) {
+                    break;
+                }
+                $pos = $css_expression_start_pos + strlen(static::CSS_SELECTOR_EXPRESSION_BEGIN) - 1;
+                $brackets = 1;
+                $css_expression = static::CSS_SELECTOR_EXPRESSION_BEGIN;
+                while ($brackets !== 0 && $pos !== strlen($select_value)-1 ) {
+                    $pos++;
+                    if ($select_value[$pos] == '[') {
+                        $brackets ++;
+                    }
+                    if ($select_value[$pos] == ']') {
+                        $brackets --;
+                    }
+                    $css_expression .= $select_value[$pos];
+                }
+                if ($brackets !== 0) {
+                    continue;
+                }
+
+                $converted_xpath_expression = $this->_convertCssExpressionToXpath($css_expression);
+                if (is_null($converted_xpath_expression)) {
+                    throw new \LogicException('stex: invalid css expression: ' . $css_expression);
+                }
+
+                $select_value = str_replace($css_expression, $converted_xpath_expression, $select_value);
+                $select_attribute->value = $select_value;
+            }
+        }
     }
 
     /**

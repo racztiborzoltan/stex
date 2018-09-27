@@ -7,7 +7,7 @@ use PHPUnit\Framework\TestCase;
 use League\Container\Container;
 use Stex\StexXsltProcessor;
 
-final class StexXsltProcessorContainerTest extends TestCase
+final class StexCssSelectTest extends TestCase
 {
 
     /**
@@ -28,10 +28,6 @@ final class StexXsltProcessorContainerTest extends TestCase
     public function setUp()
     {
         $container = new Container();
-        $container->add('foo', 'bar');
-        $container->add('datetime', function(){
-            return new \DateTime();
-        });
 
         $proc = new StexXsltProcessor();
 
@@ -75,36 +71,19 @@ final class StexXsltProcessorContainerTest extends TestCase
         $this->_testNodeValues($result);
     }
 
-    public function test_transformToDoc()
-    {
-        $result_doc = $this->_getStexXsltProcessor()->transformToDoc($this->_getXmlDocument()->firstChild);
-        $this->_testNodeValues($result_doc);
-    }
-
-    public function test_transformToUri()
-    {
-        $output_path = 'file://'.__DIR__.'/temp/test_transform_to_uri_output.xml';
-        $this->_getStexXsltProcessor()->transformToUri($this->_getXmlDocument(), $output_path);
-
-        $result = new \DOMDocument();
-        $result->load($output_path);
-
-        $this->_testNodeValues($result);
-    }
-
     protected function _testNodeValues(\DOMDocument $dom_document)
     {
-        $this->_testNodeValue($dom_document->getElementsByTagName('php_function'), 'FOOBAR');
-        $this->_testNodeValue($dom_document->getElementsByTagName('foo'), 'bar');
-        $this->_testNodeValue($dom_document->getElementsByTagName('datetime'), date('Y-m-d'));
+        $this->_testNodeValue($dom_document->getElementsByTagName('test'));
     }
 
-    protected function _testNodeValue(\DOMNodeList $node_list, $expected_value)
+    protected function _testNodeValue(\DOMNodeList $node_list)
     {
-        $this->assertTrue($node_list->length === 1);
-        if ($node_list->length === 1) {
-            $test_node = $node_list->item(0);
-            $this->assertEquals($expected_value, $test_node->nodeValue);
+        foreach ($node_list as $node) {
+            /**
+             * @var \DOMElement $node
+             */
+            $expected_value = $node->getAttribute('expected-value');
+            $this->assertEquals($expected_value, $node->nodeValue);
         }
     }
 }
