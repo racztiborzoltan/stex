@@ -2,14 +2,12 @@
 use Stex\StexXsltProcessor;
 use Stex\VariableList;
 
-require_once '../vendor/autoload.php';
+require_once '../../vendor/autoload.php';
 
 $stex = new StexXsltProcessor();
 
-libxml_use_internal_errors(true);
-
 $xsl = new \DOMDocument();
-$xsl->load('collection.xsl');
+$xsl->load('stex_xslt.xsl');
 $stex->setXslDocument($xsl);
 
 $variables = new VariableList();

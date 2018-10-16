@@ -5,11 +5,6 @@
 	<xsl:param name="title" select="'Simple Template XSLT Example'" />
 	
 	<xsl:output method="html" encoding="utf-8" indent="yes" />
-
-    <!-- default template for all tag and attribute -->
-	<xsl:template match="node()|@*">
-		<xsl:apply-templates></xsl:apply-templates>
-	</xsl:template>
 	
 	<xsl:template match="/">
 		<!-- CSS expressions without ' or " enclosing characters -->
@@ -67,5 +62,11 @@
         <xsl:value-of select="."></xsl:value-of>
 		<xsl:text>&#xa;--------------------------------&#xa;</xsl:text>
     </xsl:template>
+
+
+    <!-- default template for all tag and attribute -->
+	<xsl:template match="node()|@*">
+		<xsl:apply-templates></xsl:apply-templates>
+	</xsl:template>
     
 </xsl:stylesheet>

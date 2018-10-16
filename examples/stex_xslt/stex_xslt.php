@@ -1,18 +1,17 @@
 <?php
 use Stex\StexXsltProcessor;
 
-require_once '../vendor/autoload.php';
+require_once '../../vendor/autoload.php';
 
 $stex = new StexXsltProcessor();
 
-libxml_use_internal_errors(true);
 
 $xsl = new \DOMDocument();
-$xsl->load('collection.xsl');
+$xsl->load('stex_xslt.xsl');
 $stex->setXslDocument($xsl);
 
 $xml = new \DOMDocument();
-$xml->load('collection.xml');
+$xml->load('../example.xml');
 
 $dom_document = $stex->transformToDoc($xml);
 

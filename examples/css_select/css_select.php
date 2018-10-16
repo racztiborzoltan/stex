@@ -1,11 +1,10 @@
 <?php
 use Stex\StexXsltProcessor;
 
-require_once '../vendor/autoload.php';
+require_once '../../vendor/autoload.php';
 
 $stex = new StexXsltProcessor();
 
-$prev_internal_error = libxml_use_internal_errors(true);
 
 $xsl = new \DOMDocument();
 $xsl->load('css_select.xsl');
@@ -14,9 +13,7 @@ $stex->setXslDocument($xsl);
 // $stex->importStylesheet($xsl);
 
 $xml = new \DOMDocument();
-$xml->load('collection.xml');
-
-libxml_use_internal_errors($prev_internal_error);
+$xml->load('../example.xml');
 
 $dom_document = $stex->transformToDoc($xml);
 
