@@ -350,9 +350,10 @@ class StexXsltProcessor extends \XSLTProcessor
      * Returns null if an error has occurred. (invalid css expression or invalid css selector)
      *
      * @param string $css_expression
+     * @param string $xpath_prefix
      * @return string|NULL
      */
-    protected function _convertCssExpressionToXpath($css_expression): ?string
+    protected function _convertCssExpressionToXpath($css_expression, $xpath_prefix = 'descendant-or-self::'): ?string
     {
         if (substr($css_expression, 0, strlen(static::CSS_SELECTOR_EXPRESSION_BEGIN)) !== static::CSS_SELECTOR_EXPRESSION_BEGIN
             ||
@@ -370,7 +371,7 @@ class StexXsltProcessor extends \XSLTProcessor
             $css_selector = trim($css_selector, '"');
         }
         try {
-            return (new \Symfony\Component\CssSelector\CssSelectorConverter())->toXPath($css_selector);
+            return (new \Stex\CssSelector\CssSelectorConverter())->toXPath($css_selector, $xpath_prefix);
         } catch (\Symfony\Component\CssSelector\Exception\SyntaxErrorException $e) {
             return null;
         }
@@ -379,7 +380,7 @@ class StexXsltProcessor extends \XSLTProcessor
     protected function _prepareStexCssSelectAttribute(\DOMDocument $xsl_document)
     {
         $xpath = new \DOMXPath($xsl_document);
-        $nodes = $xpath->query('//@select');
+        $nodes = $xpath->query('//@select|//@match');
         foreach ($nodes as $select_attribute) {
             /**
              * @var \DOMAttr $select_attribute
@@ -406,7 +407,11 @@ class StexXsltProcessor extends \XSLTProcessor
                     continue;
                 }
 
-                $converted_xpath_expression = $this->_convertCssExpressionToXpath($css_expression);
+                if ($select_attribute->name == 'match') {
+                    $converted_xpath_expression = $this->_convertCssExpressionToXpath($css_expression, '');
+                } else {
+                    $converted_xpath_expression = $this->_convertCssExpressionToXpath($css_expression);
+                }
                 if (is_null($converted_xpath_expression)) {
                     throw new \LogicException('stex: invalid css expression: ' . $css_expression);
                 }
