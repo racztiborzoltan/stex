@@ -46,7 +46,21 @@
 			<test expected-value="Ben Harper">
 				<xsl:value-of select="@css['collection']/cd/artist"></xsl:value-of>
 			</test>
+			<xsl:apply-templates></xsl:apply-templates>
 		</tests>
+	</xsl:template>
+
+	<!-- tests the css selector in match attribute -->
+    <xsl:template match="@css['collection cd.first artist']">
+		<test expected-value="Ben Harper">
+			<xsl:value-of select="."></xsl:value-of>
+		</test>
+		<xsl:apply-templates></xsl:apply-templates>
+    </xsl:template>
+
+	<!-- default template for all tag and attribute -->
+	<xsl:template match="node()|@*">
+		<xsl:apply-templates></xsl:apply-templates>
 	</xsl:template>
 
 </xsl:stylesheet>
